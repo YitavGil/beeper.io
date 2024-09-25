@@ -34,6 +34,12 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var LEBANON_BOUNDS = {
+    north: 34.69,
+    south: 33.05,
+    east: 36.62,
+    west: 35.10
+};
 var API_URL = 'http://localhost:3000/api';
 var map;
 var markers = {};
@@ -47,10 +53,17 @@ document.addEventListener('DOMContentLoaded', function () {
     (_c = document.getElementById('cancelUpdate')) === null || _c === void 0 ? void 0 : _c.addEventListener('click', closeModal);
 });
 function initMap() {
-    map = L.map('map').setView([33.8938, 35.5018], 8); // Centered on Lebanon
+    map = L.map('map', {
+        maxBounds: [
+            [LEBANON_BOUNDS.south, LEBANON_BOUNDS.west],
+            [LEBANON_BOUNDS.north, LEBANON_BOUNDS.east]
+        ]
+    }).setView([33.8938, 35.5018], 8); // Centered on Lebanon
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
+    // Add click event listener to the map
+    map.on('click', onMapClick);
 }
 function loadBeepers() {
     return __awaiter(this, void 0, void 0, function () {
@@ -278,6 +291,52 @@ function addMarkerToMap(beeper) {
             markers[beeper.id] = marker;
         }
     }
+}
+;
+function onMapClick(e) {
+    return __awaiter(this, void 0, void 0, function () {
+        var _a, lat, lng, response, newBeeper, errorData, error_6;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    _a = e.latlng, lat = _a.lat, lng = _a.lng;
+                    if (lat < LEBANON_BOUNDS.south || lat > LEBANON_BOUNDS.north ||
+                        lng < LEBANON_BOUNDS.west || lng > LEBANON_BOUNDS.east) {
+                        alert("Please select a location within Lebanon.");
+                        return [2 /*return*/];
+                    }
+                    _b.label = 1;
+                case 1:
+                    _b.trys.push([1, 7, , 8]);
+                    return [4 /*yield*/, fetch("".concat(API_URL, "/beepers"), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ lat: lat, lon: lng, status: 'produced' })
+                        })];
+                case 2:
+                    response = _b.sent();
+                    if (!response.ok) return [3 /*break*/, 4];
+                    return [4 /*yield*/, response.json()];
+                case 3:
+                    newBeeper = _b.sent();
+                    addMarkerToMap(newBeeper);
+                    loadBeepers(); // Refresh the beeper list
+                    return [3 /*break*/, 6];
+                case 4: return [4 /*yield*/, response.json()];
+                case 5:
+                    errorData = _b.sent();
+                    alert("Failed to create beeper: ".concat(errorData.message));
+                    _b.label = 6;
+                case 6: return [3 /*break*/, 8];
+                case 7:
+                    error_6 = _b.sent();
+                    console.error('Error creating beeper:', error_6);
+                    alert('Failed to create beeper. Please try again.');
+                    return [3 /*break*/, 8];
+                case 8: return [2 /*return*/];
+            }
+        });
+    });
 }
 // Make functions available globally
 window.showUpdateModal = showUpdateModal;

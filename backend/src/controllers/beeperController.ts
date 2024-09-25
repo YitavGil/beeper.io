@@ -3,16 +3,28 @@ import { v4 as uuidv4 } from 'uuid';
 import { Beeper, beepers } from '../models/beeper';
 
 export const createBeeper = (req: Request, res: Response) => {
-  const { status } = req.body;
+  const { status, lat, lon } = req.body;
+
+  // Basic validation
+  if (typeof lat !== 'number' || typeof lon !== 'number') {
+    return res.status(400).json({ message: 'Invalid latitude or longitude' });
+  }
+
+  // Check if coordinates are within Lebanon's boundaries
+  if (lat < 33.05 || lat > 34.69 || lon < 35.10 || lon > 36.62) {
+    return res.status(400).json({ message: 'Coordinates must be within Lebanon' });
+  }
+
   const newBeeper: Beeper = {
     id: uuidv4(),
     status: status || 'produced',
+    lat,
+    lon,
     productionDate: new Date(),
   };
   beepers.push(newBeeper);
   res.status(201).json(newBeeper);
 };
-
 export const getAllBeepers = (req: Request, res: Response) => {
   res.json(beepers);
 };
